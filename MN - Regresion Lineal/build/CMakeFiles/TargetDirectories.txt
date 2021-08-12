@@ -1,0 +1,13 @@
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/CMakeFiles/install/strip.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/CMakeFiles/install/local.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/CMakeFiles/edit_cache.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/CMakeFiles/metnum.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/CMakeFiles/rebuild_cache.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/CMakeFiles/list_install_components.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/CMakeFiles/install.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/pybind11/CMakeFiles/install/strip.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/pybind11/CMakeFiles/install/local.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/pybind11/CMakeFiles/edit_cache.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/pybind11/CMakeFiles/rebuild_cache.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/pybind11/CMakeFiles/list_install_components.dir
+/home/orga2/Materias/MetNum/metodos-numericos-grupo-4/tp3/build/pybind11/CMakeFiles/install.dir

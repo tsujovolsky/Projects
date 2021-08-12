@@ -1,0 +1,19 @@
+# VS CODE
+.vscode
+
+# CLion
+.idea
+
+# CMake
+build/
+
+# C++
+*.o
+*.so
+
+# Python
+__pycache__/
+
+# Submodules
+eigen/
+pybind11/

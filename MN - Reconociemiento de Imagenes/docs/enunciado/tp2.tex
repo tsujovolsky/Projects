@@ -1,0 +1,238 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[spanish, activeacute]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{a4wide}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{here}
+\usepackage{subcaption}
+\usepackage{amsfonts,amsmath}
+
+
+\graphicspath{{img/}}
+
+%\parindent = 0 pt
+\parskip = 5 pt
+
+%\newcommand{\real}{\hbox{\bf R}}
+
+\newcommand{\real}{\mathbb{R}}
+\newcommand{\kknn}{k}
+\newcommand{\kpca}{\alpha}
+\newcommand{\kpls}{\gamma}
+\newcommand{\kkfold}{K}
+\newcommand{\kaggle}{\textit{kaggle}}
+
+\begin{document}
+
+\input{header_tp}
+
+\section*{Introducción}
+
+El objetivo de este trabajo práctico es el desarrollo y evaluación de una herramienta de OCR (\textit{Optical Character Recognition}) para el reconocimiento de dígitos manuscritos en imágenes.
+
+Se quiere desarrollar un algoritmo de clasificación supervisado el cual se deberá \textit{entrenar} con una base de caracteres \textbf{conocidos} que luego nos servirá para reconocer otras instancias de esos caracteres no presentes en la base de datos de entrenamiento.
+
+
+El foco de este trabajo está puesto en la experimentación científica de un método de OCR simplificado, clasificación por vecinos más cercanos con reducción de la dimensionalidad.
+
+
+\section*{Metodología}
+
+En este trabajo práctico nos limitaremos a reconocer dígitos manuscritos entre el 0 y el 9. Sin embargo, es  deseable que este método pueda ser extendido para reconocer cualquier tipo de caracteres o símbolos.
+
+Como instancias de entrenamiento, se tiene una base de datos de $n$ imágenes en escala de grises, las cuales se encuentran etiquetadas con su clase correspondiente, es decir, el dígito, 0-9, al que representan. 
+
+%%%%
+\subsection*{Reconocimiento de dígitos}
+
+El objetivo del reconocimiento de dígitos consiste en utilizar la información de la base de datos para, dada una nueva imagen de un dígito sin etiquetar, determinar a cuál corresponde.
+% teniendo en cuenta factores tales como calidad de los resultados y tiempo de ejecución empleado.
+
+%%
+
+Una primera aproximación es utilizar el conocido algoritmo de \emph{$\kknn$ vecinos más cercanos} o $kNN$ \cite{duda2012pattern}, por su sigla en inglés. 
+En su versión más simple, este algoritmo considera a cada objeto de la base de entrenamiento como un punto en el espacio euclídeo $m$-dimensional, para el cual se conoce a qué clase corresponde (en nuestro caso, qué dígito es) para luego, dado un nuevo objeto, asociarle la clase del o los puntos más cercanos de la base de datos. 
+%%
+
+\subsubsection*{Procedimiento de $k$ vecinos más cercanos}
+\begin{itemize}
+ \item Se define una base de datos de entrenamiento como el conjunto ${\cal D} = \{ x_i \ : \ i = 1,\dots,n\}$.
+ \item Luego, se define $m$ como el número total de píxeles de la imagen $i$-ésima almacenada por filas y representada como un vector $x_i \in \real^{m}$.
+ \item De esta forma, dada una nueva imagen $x \in \real^{m}$, talque $x \notin {\cal D}$, 
+ para clasificarla simplemente se busca el subconjunto de los $k$ vectores $\{x_i\} \subseteq {\cal D}$ más cercanos a $x$, y se le asigna la clase que posea el mayor número de repeticiones dentro de ese subconjunto, es decir, la moda.
+\end{itemize}
+
+El algoritmo del vecino más cercano es muy sensible a la dimensión de los objetos y a la variación de la intensidad de las imágenes.
+%
+Es por eso, que las imágenes dentro de la base de datos ${\cal D}$ se suelen \textit{preprocesar} para lidiar con estos problemas.
+
+Teniendo en cuenta esto, una alternativa interesante de preprocesamiento es buscar reducir la cantidad de dimensiones de las muestras para trabajar con una cantidad de variables más acotada y, simultáneamente, buscando que las nuevas variables tengan información representativa para clasificar los objetos de la base de entrada. 
+
+En esta dirección, consideraremos el método de reducción de dimensionalidad \emph{Análisis de componentes principales} o PCA (por su sigla en inglés) dejando de la lado los procesamientos de imágenes que se puedan realizar previamente o alternativamente a aplicar PCA.
+
+
+\subsubsection*{Análisis de componentes principales}
+
+El método de análisis de componentes principales o PCA consiste en lo siguiente.
+
+
+Sea $\mu = (x_1 + \ldots + x_n)/n$ el promedio de las imágenes ${\cal D} = \{x_i : i = 1, \dots, n \}$ tal que $x_i \in \real^m$.
+%
+Definimos $X\in\real^{n\times m}$ como la matriz que contiene en la $i$-ésima fila al vector $(x_i - \mu)^{t}/\sqrt{n-1}$.
+La matriz de covarianza de la muestra $X$ se define como $M=X^tX$.
+
+Siendo $v_j$ el autovector de $M$ asociado al $j$-ésimo autovalor, al ser ordenados por su valor absoluto, definimos para $i = 1,\ldots,n$ la \textsl{transformación característica} del dígito $x_{i}$ como el vector $\mathbf{tc}(x_i) = (v_1\, x_i, v_2\, x_i,\ldots,v_{\kpca}\, x_i)^t \in\real^{\kpca}$, donde $\kpca \in\{1,\ldots,m\}$ es un parámetro de la implementación. 
+%
+Este proceso corresponde a extraer las $\kpca$ primeras \textit{componentes principales} de cada imagen. La idea es que $\mathbf{tc}(x_i)$ resuma la información más relevante de la imagen, descartando los dimensiones menos significativas. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%metodo completo
+\subsubsection*{Clasificación con kNN y PCA}
+
+El método PCA previamente presentado sirve para realizar una transformación de los datos de entrada a otra base y así trabajar en otro espacio con mejores propiedades que el original.
+%
+Por lo tanto, el proceso completo de clasificación se puede resumir como:
+
+Dada una nueva imagen $x$ de un dígito, se calcula $\mathbf{tc}(x)$, y se compara con $\mathbf{tc}(x_i)$, $\forall x_i \in {\cal D}$, para luego clasificar mediante $kNN$.
+
+\subsection*{Validación cruzada}
+
+Finalmente, nos concentramos en la evaluación de los métodos y en la correcta elección de sus parámetros.
+
+Dado que necesitamos conocer previamente a qué dígito corresponde una imagen para poder estimar la correctitud de la clasificación, una alternativa es particionar la base de entrenamiento en dos, utilizando una parte de ella en forma completa para el entrenamiento y la restante como test, pudiendo así corroborar la clasificación realizada, al contar con el etiquetado del entrenamiento. 
+%
+Sin embargo, realizar toda la experimentación sobre una única partición de la base podría resultar en una incorrecta estimación de parámetros, como por ejemplo el conocido caso de \emph{overfitting}. 
+
+Por lo tanto, se estudiará la técnica de \emph{cross validation}\cite{duda2012pattern}, en particular el \emph{$\kkfold$-fold cross validation}\footnote{No confundir el $K$ de $\kkfold$-fold con el $k$ de $kNN$, ambos son parámetros de los métodos respectivos que no están relacionados necesariamente}, 
+para realizar una estimación de los parámetros de los métodos que resulte estadísticamente más robusta. 
+
+
+\section*{Enunciado}
+
+\textbf{Se pide} implementar un programa en \verb+C+ o \verb-C++- que lea desde archivos las imágenes de entrenamiento correspondientes a distintos dígitos y que, utilizando los métodos descriptos en la sección anterior, dada una nueva imagen de un dígito determine a qué número pertenece. 
+
+Para ello, el programa \textbf{deberá} implementar el algoritmo de $kNN$ así como también la reducción de dimensión previa utilizando PCA.
+
+Con el objetivo de obtener la transformaciones características de cada método, \textbf{se deberá} implementar el método de la potencia con deflación para la estimación de autovalores/autovectores de la matriz de covarianza en el caso de PCA. 
+
+%%%
+Se recomienda realizar tests para verificar la implementación del método en casos donde los autovalores y autovectores sean conocidos se antemano. También, puede resultar de utilidad comparar con los datos provistos por la cátedra, utilizando Python o alguna librería de cálculo numérico.
+
+\textbf{Se pide} realizar un estudio experimental de los métodos propuestos sobre una base de entrenamiento  utilizando la técnica \emph{$\kkfold$-fold cross validation} mencionada anteriormente,
+con el objetivo de analizar el poder de clasificación y encontrar los mejores parámetros de los métodos.
+%
+Se deberá trabajar al menos con la base de de datos MNIST, en la versión disponible en \kaggle\ para la competencia \textit{Digit Recognizer}\footnote{\url{www.kaggle.com/c/digit-recognizer}}. 
+%
+
+\section*{Experimentación}
+
+Para guiar la experimentación, se detallan los siguientes lineamientos y preguntas:
+%
+\begin{itemize}
+  \item Analizar la calidad de los resultados obtenidos al combinar $kNN$ con y sin PCA, para un rango amplio de combinaciones de valores de $\kknn$ y $\kpca$. 
+  Llamamos $\kknn$ a la cantidad de vecinos a considerar en el algoritmo $kNN$ y $\kpca$ a la cantidad de componentes principales a tomar.
+  \item Analizar la calidad de los resultados obtenidos al combinar $kNN$ con PCA, para un rango amplio de cantidades de imágenes de entrenamiento. Utilizar desde muy pocas imágenes de entrenamiento hasta todas las disponibles para identificar en que situación se comporta mejor cada uno de los métodos.
+  \item ¿Cómo se relaciona $\kknn$ con el tamaño del conjunto de entrenamiento? Pensar el valor máximo y mínimo que puede tomar $\kknn$ y qué sentido tendrían los valores.
+
+\end{itemize}
+%
+También, \textbf{se debe} considerar en los análisis anteriores el tiempo de ejecución.\\
+
+La calidad de los resultados obtenidos será analizada mediante diferentes métricas:
+%
+\begin{enumerate}
+ \item Accuracy
+ \item Curvas de precision/recall
+ \item {Kappa de Cohen}
+ \item {F1-Score}
+\end{enumerate}
+En particular, la métrica más importante que \textbf{debe} reportarse en los experimentos es la tasa de efectividad lograda o \textit{accuracy}, es decir, la cantidad dígitos correctamente clasificados respecto a la cantidad total de casos analizados.
+%
+También, se \textbf{debe} utilizar al menos otra de las métricas mencionadas, aunque no necesariamente para todos los experimentos realizados.
+
+
+
+\begin{itemize}
+  \item Realizar los experimentos de los ítems anteriores para valores distintos de $\kkfold$ del método $\kkfold$-fold\footnote{Para esta tarea en particular, se recomienda leer la rutina \texttt{cvpartition} provista por MATLAB.}, donde  $\kkfold$ a la cantidad de particiones consideradas para el cross-validation.
+  \begin{itemize}
+    \item Justificar el por qué de la elección de los mismos. ¿Cuál sería su valor máximo?
+    \item ¿En qué situaciones es más conveniente utilizar $\kkfold$-fold con respecto a no utilizarlo? 
+    \item ¿Cómo afecta el tamaño del conjunto de entrenamiento?
+  \end{itemize}   
+  \item En base a los resultados obtenidos para ambos métodos, seleccionar aquella combinación de parámetros que se considere la mejor alternativa, con su correspondiente justificación, compararlas entre sí y sugerir un método para su utilización en la práctica.
+\end{itemize}
+
+
+En todos los casos es \textbf{obligatorio} fundamentar los experimentos planteados, proveer los archivos e información necesaria para replicarlos, presentar los resultados de forma conveniente y clara, y analizar los mismos con el nivel de detalle apropiado. En caso de ser necesario, es posible también generar instancias artificiales con el fin de ejemplificar y mostrar un comportamiento determinado.
+
+
+\subsection*{Puntos opcionales (no obligatorios)}
+
+La factibilidad de aplicar PCA es particularmente sensible al tamaño de las imágenes de la base de datos. Por ejemplo, al considerar imágenes en escala de grises de $100 \times 100$ píxeles implica trabajar con matrices de tamaño $10000 \times 10000$. 
+Tener en cuenta este factor durante el trabajo práctico y analizar cómo afecta (si es que lo hace) en el desarrollo del trabajo. 
+
+%Una alternativa es reducir el tamaño de las imágenes, por ejemplo, mediante un submuestreo. 
+%Sin embargo, es posible superar esta dificultad en los casos donde el número de muestras es menor que el
+%número de variables. \textbf{Se pide} desarrollar la siguiente modificación al procedimiento y fundamentar como utilizarla en el contexto del trabajo.
+%\begin{itemize}
+%	\item Dada una matriz de covarianza $M = X^t*X$, encontrar una relación entre sus autovalores y sus autovectores con los de la matriz $\hat{M} = X*X^t$.
+%\end{itemize}
+%En base a este análisis, se pide desarrollar una herramienta alternativa que permita trabajar bajo ciertas condiciones con imágenes de tamaño mediano/grande.
+
+
+\begin{itemize}
+\item Mostrar que si tenemos la descomposición $M = U\Sigma V^t$, $V$ es la misma matriz que obtenemos al diagonalizar la matriz de covarianzas.
+\item Realizar experimentos utilizando dígitos manuscritos creados por el grupo, u otro tipo de caracteres, manteniendo el formato propuesto.\footnote{Notar que en la base original las figuras están rotadas y es blanco sobre negro, y no al revés.}. Tener en cuento lo mencionado sobre el tamaño de las matrices a procesar con PCA. Reportar resultados y dificultades encontradas.
+\item Proponer y/o implementar alguna mejora al algoritmo de $kNN$.
+\item $\star$ Con los mejores parámetros seleccionados en la fase experimental, ejecutar el método sobre el conjunto de datos de test \verb|test.csv|, utilizando como entrenamiento los 42.000 dígitos de comprendidos en el conjunto de entrenamiento \verb|train.csv|.\\
+%
+Dado que la cátedra no posee la información sobre a qué dígito corresponde cada imagen de \verb|test.csv| (y la idea no es graficar uno por uno y obtenerlo a mano), se sugiere a cada grupo participar en la competencia \emph{Digit Recognizer} actualmente activa en \kaggle\ realizando el/los envíos que consideren apropiados y reportar en el informe los resultados obtenidos.
+
+
+\end{itemize}
+
+
+
+\subsection*{Formato de entrada/salida}
+
+El ejecutable producido por el código fuente entregado deberá contar con las funcionalidades pedidas en este apartado.
+%
+El mismo deberá tomar al menos tres parámetros por línea de comando con la siguiente convención:
+\begin{verbatim}
+$ ./tp2 -m <method> -i <train_set> -q <test_set> -o <classif>
+\end{verbatim}
+%
+donde:
+\begin{itemize}
+ \item \verb|<method>| el método a ejecutar con posibilidad de extensión (0: $kNN$, 1: PCA + $kNN$, ... etc)
+ \item \verb|<train_set>| será el nombre del archivo de entrada con los datos de entrenamiento.
+ \item \verb|<test_set>| será el nombre del archivo con los datos de test a clasificar
+ \item \verb|<classif>| el nombre del archivo de salida con la clasificación de los datos de test de \verb|<test_set>|
+\end{itemize}
+
+Todos los archivos de entrada/salida deberán estar en \verb|.csv| y siguiendo el formato establecido por la competencia de \kaggle. Un ejemplo de invocación con los datos provistos por la cátedra sería el siguiente:
+\begin{verbatim}
+$ ./tp2 -m 1 -i train.csv -q test.csv -o sample_submission.csv
+\end{verbatim}
+
+Además, el programa deberá imprimir por consola un archivo, cuyo formato queda a criterio del grupo, indicando la tasa de reconocimiento obtenida para cada conjunto de test y los parámetros utilizados para los métodos.
+
+\textbf{Nota}: cada grupo tendrá la libertad de extender las funcionalidades provistas por su ejecutable. 
+En particular, puede ser de utilidad alguna variante de toma de parámetros que permita entrenar con un porcentaje de la base de datos de entrenamiento y testear con el resto (ver archivos provistos por la cátedra). Además, puede ser conveniente separar la fase de entrenamiento de la de testeo/consulta para agilizar los cálculos.
+
+\section*{Fecha de entrega} 
+
+\begin{itemize}
+ \item Formato Electrónico: Domingo 1 de Noviembre de 2020, hasta las 23:59 hs, enviando el trabajo (informe +
+ código) a la dirección \verb+metnum.lab@gmail.com+. El subject del email debe comenzar con el texto \verb+[TP2]+
+ seguido de la lista de apellidos  de los integrantes del grupo.
+\end{itemize}
+
+\noindent \textbf{Importante:} El horario es estricto. Los correos recibidos después de la hora indicada no serán considerados.  
+
+\bibliographystyle{plain}
+\bibliography{tp2}
+
+
+\end{document}
